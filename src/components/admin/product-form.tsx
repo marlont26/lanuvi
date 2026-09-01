@@ -21,6 +21,15 @@ type Props = {
 
 const EMPTY_VARIANT: VariantDraft = { flavor: "Único", size: "", price: "", stock: "0" };
 
+/** Keeps the gallery in sync when the primary image changes, preserving extra shots. */
+function nextGallery(product: ProductView | null, imageUrl: string): string[] {
+  if (!product) return [imageUrl];
+  const rest = product.gallery.filter(
+    (image) => image !== product.imageUrl && image !== imageUrl,
+  );
+  return [imageUrl, ...rest];
+}
+
 export function ProductForm({ product, onClose, onSaved }: Props) {
   const [name, setName] = useState(product?.name ?? "");
   const [tagline, setTagline] = useState(product?.tagline ?? "");
@@ -65,7 +74,7 @@ export function ProductForm({ product, onClose, onSaved }: Props) {
             description,
             category,
             imageUrl,
-            gallery: product?.gallery ?? [imageUrl],
+            gallery: nextGallery(product, imageUrl),
             ingredients,
             featured,
             active,

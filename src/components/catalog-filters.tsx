@@ -34,8 +34,10 @@ export function CatalogFilters({ resultCount }: { resultCount: number }) {
     if (search === current) return;
     const timeout = setTimeout(() => update("q", search), 300);
     return () => clearTimeout(timeout);
+    // `update` closes over `params`, so re-running on every param change keeps the
+    // pending search from overwriting a filter the user picked in the meantime.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [search, params]);
 
   const hasFilters = Boolean(category || params.get("q") || price !== "todos");
 

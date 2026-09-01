@@ -80,3 +80,7 @@ export const PRICE_RANGES = [
   { id: "10k-20k", label: "$10.000 – $20.000", min: 10000, max: 20000 },
   { id: "desde-20k", label: "Desde $20.000", min: 20000, max: Number.MAX_SAFE_INTEGER },
 ] as const;
+
+/** Online (sandbox) payment option is shown unless explicitly disabled. */
+export const ONLINE_PAYMENTS_ENABLED =
+  process.env.NEXT_PUBLIC_ONLINE_PAYMENTS_ENABLED !== "false";

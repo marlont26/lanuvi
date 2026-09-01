@@ -26,19 +26,30 @@ export function OrderTable({ orders }: { orders: OrderView[] }) {
   const [filter, setFilter] = useState<OrderStatus | "TODOS">("TODOS");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   const visible =
     filter === "TODOS" ? orders : orders.filter((order) => order.status === filter);
 
   const changeStatus = async (order: OrderView, status: OrderStatus) => {
     setPending(order.id);
-    await fetch(`/api/orders/${order.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    setPending(null);
-    router.refresh();
+    setError("");
+    try {
+      const response = await fetch(`/api/orders/${order.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        setError(`No se pudo actualizar el pedido ${order.code}.`);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError(`No se pudo actualizar el pedido ${order.code}.`);
+    } finally {
+      setPending(null);
+    }
   };
 
   return (
@@ -65,6 +76,10 @@ export function OrderTable({ orders }: { orders: OrderView[] }) {
           ))}
         </div>
       </div>
+
+      {error && (
+        <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
+      )}
 
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">

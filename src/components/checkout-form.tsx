@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CreditCard, Loader2, MessageCircle } from "lucide-react";
-import { formatCOP } from "@/lib/catalog";
+import { formatCOP, ONLINE_PAYMENTS_ENABLED } from "@/lib/catalog";
 import type { OrderView } from "@/lib/types";
 import { whatsappOrderUrl } from "@/lib/whatsapp";
 import { cartTotals, useCart } from "@/store/cart";
@@ -201,30 +201,32 @@ export function CheckoutForm() {
               </span>
             </span>
           </label>
-          <label
-            className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
-              form.paymentMethod === "online"
-                ? "border-brand-600 bg-brand-50"
-                : "border-stone-200"
-            }`}
-          >
-            <input
-              type="radio"
-              name="paymentMethod"
-              className="mt-1"
-              checked={form.paymentMethod === "online"}
-              onChange={() => set("paymentMethod")("online")}
-            />
-            <span>
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <CreditCard className="h-4 w-4" /> Pago en línea (modo prueba)
+          {ONLINE_PAYMENTS_ENABLED && (
+            <label
+              className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
+                form.paymentMethod === "online"
+                  ? "border-brand-600 bg-brand-50"
+                  : "border-stone-200"
+              }`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                className="mt-1"
+                checked={form.paymentMethod === "online"}
+                onChange={() => set("paymentMethod")("online")}
+              />
+              <span>
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <CreditCard className="h-4 w-4" /> Pago en línea (modo prueba)
+                </span>
+                <span className="mt-1 block text-sm text-stone-600">
+                  Simula una pasarela tipo Stripe / MercadoPago en sandbox. No se realiza
+                  ningún cobro real.
+                </span>
               </span>
-              <span className="mt-1 block text-sm text-stone-600">
-                Simula una pasarela tipo Stripe / MercadoPago en sandbox. No se realiza
-                ningún cobro real.
-              </span>
-            </span>
-          </label>
+            </label>
+          )}
         </section>
       </div>
 
