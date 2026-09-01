@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { BarChart3, Package, ReceiptText, Store } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { BarChart3, LogOut, Package, ReceiptText, Store } from "lucide-react";
 
 const LINKS = [
   { href: "/admin", label: "Resumen", icon: BarChart3 },
@@ -13,6 +13,15 @@ const LINKS = [
 
 export function AdminNav() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  if (pathname === "/admin/login") return null;
+
+  const logout = async () => {
+    await fetch("/api/admin/logout", { method: "POST" });
+    router.replace("/admin/login");
+    router.refresh();
+  };
 
   return (
     <nav className="flex flex-wrap gap-1">
@@ -33,6 +42,14 @@ export function AdminNav() {
           </Link>
         );
       })}
+      <button
+        type="button"
+        onClick={logout}
+        className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm text-stone-600 transition hover:bg-stone-100"
+      >
+        <LogOut className="h-4 w-4" />
+        Salir
+      </button>
     </nav>
   );
 }

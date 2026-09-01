@@ -4,17 +4,24 @@ import type { Metadata } from "next";
 import { CheckCircle2, CreditCard } from "lucide-react";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
 import { formatCOP, ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/catalog";
-import { getOrderByCode } from "@/lib/queries";
+import { getOrderByToken } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Pedido confirmado" };
 
 type Params = Promise<{ code: string }>;
+type SearchParams = Promise<{ t?: string }>;
 
-export default async function OrderPage({ params }: { params: Params }) {
-  const { code } = await params;
-  const order = await getOrderByCode(decodeURIComponent(code));
+export default async function OrderPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
+  const [{ code }, { t }] = await Promise.all([params, searchParams]);
+  const order = t ? await getOrderByToken(decodeURIComponent(code), t) : null;
   if (!order) notFound();
 
   return (

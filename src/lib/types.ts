@@ -38,6 +38,7 @@ export type OrderItemView = {
 export type OrderView = {
   id: string;
   code: string;
+  token: string;
   customerName: string;
   phone: string;
   email: string;

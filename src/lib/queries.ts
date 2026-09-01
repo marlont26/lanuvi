@@ -45,6 +45,7 @@ export function toOrderView(order: OrderWithItems): OrderView {
   return {
     id: order.id,
     code: order.code,
+    token: order.token,
     customerName: order.customerName,
     phone: order.phone,
     email: order.email,
@@ -104,9 +105,12 @@ export async function getOrders(): Promise<OrderView[]> {
   return orders.map(toOrderView);
 }
 
-export async function getOrderByCode(code: string): Promise<OrderView | null> {
-  const order = await prisma.order.findUnique({
-    where: { code },
+export async function getOrderByToken(
+  code: string,
+  token: string,
+): Promise<OrderView | null> {
+  const order = await prisma.order.findFirst({
+    where: { code, token },
     include: { items: true },
   });
   return order ? toOrderView(order) : null;

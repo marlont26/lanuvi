@@ -70,7 +70,7 @@ export function CheckoutForm() {
       if (form.paymentMethod === "whatsapp") {
         window.open(whatsappOrderUrl(order), "_blank", "noopener,noreferrer");
       }
-      router.push(`/pedido/${order.code}`);
+      router.push(`/pedido/${order.code}?t=${order.token}`);
     } catch {
       setError("Hubo un problema de conexión. Intenta de nuevo.");
     } finally {

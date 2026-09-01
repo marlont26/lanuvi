@@ -50,6 +50,8 @@ model ProductVariant {
 model Order {
   id            String   @id @default(cuid())
   code          String   @unique
+  /// Secret shared only with the buyer; required to open the confirmation page.
+  token         String   @unique @default(cuid())
   customerName  String
   phone         String
   email         String   @default("")

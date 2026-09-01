@@ -22,7 +22,8 @@ npm run setup   # prisma generate + db push + seed con datos de Lanuvi
 npm run dev
 ```
 
-La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/admin.
+La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/admin
+(contraseña por defecto del `.env.example`: `lanuvi-admin`).
 
 ### Variables de entorno
 
@@ -31,6 +32,7 @@ La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/adm
 | `DATABASE_URL` | Cadena de conexión de Prisma. Por defecto `file:./dev.db` (SQLite). |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | Número que recibe la confirmación de pedidos por WhatsApp. |
 | `NEXT_PUBLIC_ONLINE_PAYMENTS_ENABLED` | Muestra el pago en línea (Stripe/MercadoPago) en modo prueba. |
+| `ADMIN_PASSWORD` | Contraseña del panel. Si no está definida, `/admin` y sus APIs quedan bloqueados. |
 
 ### Usar PostgreSQL en lugar de SQLite
 
@@ -60,10 +62,14 @@ La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/adm
 - Carrito lateral persistente con cálculo dinámico de subtotal, domicilio (gratis desde
   $90.000) y total.
 - Checkout con datos de entrega y confirmación por **WhatsApp** o **pago en línea en modo
-  prueba**; el pedido queda guardado y visible en `/pedido/<código>`.
+  prueba**; el pedido queda guardado y visible en `/pedido/<código>?t=<token>`, con un token
+  secreto que solo recibe quien compra.
 - Diseño mobile-first en todas las vistas.
 
 ### Panel de administración (`/admin`)
+
+Protegido con contraseña (`ADMIN_PASSWORD`): un middleware exige la sesión en `/admin/**` y en
+las APIs de productos y pedidos; lo único público es `POST /api/orders`, que usa el checkout.
 
 - **Resumen**: ingresos, pedidos, ticket promedio, más vendidos, ingresos por categoría y
   alertas de inventario bajo.
@@ -93,6 +99,9 @@ src/store/        carrito con Zustand
 | `GET` / `PUT` / `DELETE` | `/api/products/:id` | Detalle, edición y borrado/archivado |
 | `GET` / `POST` | `/api/orders` | Listar y crear pedidos (valida stock y lo descuenta en una transacción) |
 | `PATCH` / `DELETE` | `/api/orders/:id` | Cambiar estado o eliminar un pedido |
+| `POST` | `/api/admin/login` / `/api/admin/logout` | Abrir y cerrar la sesión del panel |
+
+Todas requieren sesión de administración salvo `POST /api/orders`.
 
 Las imágenes de producto son ilustraciones SVG generadas localmente, por lo que el proyecto
 funciona sin servicios externos.
