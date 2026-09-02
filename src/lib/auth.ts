@@ -1,5 +1,7 @@
 export const ADMIN_COOKIE = "lanuvi_admin";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+/** Allowance for clock drift between the signing and verifying processes. */
+const SKEW_MS = 5 * 60 * 1000;
 
 function secret(): string {
   return process.env.ADMIN_PASSWORD ?? "";
@@ -42,6 +44,6 @@ export async function isValidSession(token: string | undefined): Promise<boolean
   if (!expiresAt || !signature) return false;
   const expiry = Number(expiresAt);
   const now = Date.now();
-  if (!(expiry > now) || expiry > now + SESSION_TTL_MS) return false;
+  if (!(expiry > now) || expiry > now + SESSION_TTL_MS + SKEW_MS) return false;
   return signature === (await sign(expiresAt));
 }

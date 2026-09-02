@@ -1,34 +1,28 @@
 import { NextResponse } from "next/server";
 import { ADMIN_COOKIE, checkPassword, createSession } from "@/lib/auth";
 
-const MAX_ATTEMPTS = 5;
+const FREE_ATTEMPTS = 5;
+const MAX_DELAY_MS = 20_000;
 const WINDOW_MS = 5 * 60 * 1000;
-const attempts = new Map<string, { count: number; until: number }>();
 
-function throttled(ip: string): boolean {
-  const entry = attempts.get(ip);
-  if (!entry || entry.until < Date.now()) return false;
-  return entry.count >= MAX_ATTEMPTS;
+// Single counter for the whole store: client IPs can be forged behind a proxy, so
+// guesses are slowed with a growing delay instead of a lockout that a spoofed
+// address could trigger for the real owner.
+let failures = { count: 0, until: 0 };
+
+function penaltyMs(): number {
+  if (failures.until < Date.now()) failures = { count: 0, until: 0 };
+  const excess = failures.count - FREE_ATTEMPTS + 1;
+  return excess <= 0 ? 0 : Math.min(2 ** excess * 1000, MAX_DELAY_MS);
 }
 
-function recordFailure(ip: string): void {
-  const now = Date.now();
-  const entry = attempts.get(ip);
-  if (!entry || entry.until < now) {
-    attempts.set(ip, { count: 1, until: now + WINDOW_MS });
-    return;
-  }
-  entry.count += 1;
+function recordFailure(): void {
+  failures = { count: failures.count + 1, until: Date.now() + WINDOW_MS };
 }
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "local";
-  if (throttled(ip)) {
-    return NextResponse.json(
-      { error: "Demasiados intentos. Espera unos minutos." },
-      { status: 429 },
-    );
-  }
+  const penalty = penaltyMs();
+  if (penalty > 0) await new Promise((resolve) => setTimeout(resolve, penalty));
 
   const { password } = (await request.json()) as { password?: string };
 
@@ -39,11 +33,11 @@ export async function POST(request: Request) {
     );
   }
   if (!checkPassword(password ?? "")) {
-    recordFailure(ip);
+    recordFailure();
     return NextResponse.json({ error: "Contraseña incorrecta." }, { status: 401 });
   }
 
-  attempts.delete(ip);
+  failures = { count: 0, until: 0 };
   const session = await createSession();
   const response = NextResponse.json({ ok: true });
   response.cookies.set(ADMIN_COOKIE, session.value, {
