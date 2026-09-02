@@ -40,6 +40,8 @@ export async function isValidSession(token: string | undefined): Promise<boolean
   if (!token || !secret()) return false;
   const [expiresAt, signature] = token.split(".");
   if (!expiresAt || !signature) return false;
-  if (Number(expiresAt) < Date.now()) return false;
+  const expiry = Number(expiresAt);
+  const now = Date.now();
+  if (!(expiry > now) || expiry > now + SESSION_TTL_MS) return false;
   return signature === (await sign(expiresAt));
 }

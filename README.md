@@ -18,12 +18,15 @@ git clone https://github.com/marlont26/lanuvi.git
 cd lanuvi
 npm install
 cp .env.example .env
+# define tu clave del panel, por ejemplo:
+sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=\"$(openssl rand -base64 18)\"|" .env
 npm run setup   # prisma generate + db push + seed con datos de Lanuvi
 npm run dev
 ```
 
-La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/admin
-(contraseña por defecto del `.env.example`: `lanuvi-admin`).
+La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/admin, que pide
+la contraseña de `ADMIN_PASSWORD`. El repo no trae ninguna por defecto: si la dejas vacía,
+el panel queda bloqueado.
 
 ### Variables de entorno
 
@@ -32,7 +35,7 @@ La tienda queda en http://localhost:3000 y el panel en http://localhost:3000/adm
 | `DATABASE_URL` | Cadena de conexión de Prisma. Por defecto `file:./dev.db` (SQLite). |
 | `NEXT_PUBLIC_WHATSAPP_NUMBER` | Número que recibe la confirmación de pedidos por WhatsApp. |
 | `NEXT_PUBLIC_ONLINE_PAYMENTS_ENABLED` | Muestra el pago en línea (Stripe/MercadoPago) en modo prueba. |
-| `ADMIN_PASSWORD` | Contraseña del panel. Si no está definida, `/admin` y sus APIs quedan bloqueados. |
+| `ADMIN_PASSWORD` | Contraseña del panel (defínela tú). Si está vacía, `/admin` y sus APIs quedan bloqueados. |
 
 ### Usar PostgreSQL en lugar de SQLite
 

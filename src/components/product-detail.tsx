@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
 import { categoryName, formatCOP } from "@/lib/catalog";
-import type { ProductView } from "@/lib/types";
+import type { ProductView, VariantView } from "@/lib/types";
 import { useCart } from "@/store/cart";
 
 const TABS = ["descripcion", "nutricional", "envio"] as const;
@@ -16,6 +16,12 @@ const TAB_LABELS: Record<Tab, string> = {
   envio: "Envío y conservación",
 };
 
+/** Prefers the cheapest in-stock presentation so a sold-out size is never preselected. */
+function defaultVariant(variants: VariantView[], flavor: string): VariantView | undefined {
+  const matching = variants.filter((variant) => variant.flavor === flavor);
+  return matching.find((variant) => variant.stock > 0) ?? matching[0];
+}
+
 export function ProductDetail({ product }: { product: ProductView }) {
   const addItem = useCart((state) => state.addItem);
   const flavors = useMemo(
@@ -25,7 +31,9 @@ export function ProductDetail({ product }: { product: ProductView }) {
 
   const [flavor, setFlavor] = useState(flavors[0] ?? "");
   const sizes = product.variants.filter((v) => v.flavor === flavor);
-  const [variantId, setVariantId] = useState(sizes[0]?.id ?? "");
+  const [variantId, setVariantId] = useState(
+    defaultVariant(product.variants, flavor)?.id ?? "",
+  );
   const variant =
     product.variants.find((v) => v.id === variantId) ?? sizes[0] ?? product.variants[0];
   const [quantity, setQuantity] = useState(1);
@@ -35,8 +43,7 @@ export function ProductDetail({ product }: { product: ProductView }) {
 
   const selectFlavor = (next: string) => {
     setFlavor(next);
-    const firstSize = product.variants.find((v) => v.flavor === next);
-    setVariantId(firstSize?.id ?? "");
+    setVariantId(defaultVariant(product.variants, next)?.id ?? "");
     setQuantity(1);
   };
 

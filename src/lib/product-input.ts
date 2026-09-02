@@ -22,12 +22,13 @@ export type ProductInput = {
 };
 
 export function slugify(value: string): string {
-  return value
+  const slug = value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+  return slug || "producto";
 }
 
 /** Validates an admin product payload, returning either the clean input or errors. */
@@ -57,8 +58,11 @@ export function parseProductInput(
     const price = Number(variant.price);
     const stock = Number(variant.stock);
     if (!size) return { ok: false, error: "Cada presentación necesita un tamaño." };
-    if (!Number.isFinite(price) || price <= 0) {
-      return { ok: false, error: `Precio inválido para la presentación ${size}.` };
+    if (!Number.isInteger(price) || price < 1) {
+      return {
+        ok: false,
+        error: `El precio de la presentación ${size} debe ser un entero en pesos mayor a cero.`,
+      };
     }
     if (!Number.isInteger(stock) || stock < 0) {
       return { ok: false, error: `Stock inválido para la presentación ${size}.` };
@@ -70,7 +74,7 @@ export function parseProductInput(
       id: typeof variant.id === "string" && variant.id ? variant.id : undefined,
       flavor,
       size,
-      price: Math.round(price),
+      price,
       stock,
     });
   }

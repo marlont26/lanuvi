@@ -4,6 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 
+/** Only same-site admin paths are followed, so a crafted `next` can't redirect off-site. */
+function safeNext(next: string | null): string {
+  return next && /^\/admin(\/|$)/.test(next) ? next : "/admin";
+}
+
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -26,7 +31,7 @@ export function LoginForm() {
         setError(data.error ?? "No pudimos validar la contraseña.");
         return;
       }
-      router.replace(params.get("next") || "/admin");
+      router.replace(safeNext(params.get("next")));
       router.refresh();
     } catch {
       setError("Error de conexión.");
