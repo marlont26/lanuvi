@@ -1,9 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { CheckCircle2, CreditCard } from "lucide-react";
+import { CheckCircle2, Smartphone } from "lucide-react";
 import { WhatsAppOrderLink } from "@/components/whatsapp-order-link";
-import { formatCOP, ORDER_STATUS_LABELS, type OrderStatus } from "@/lib/catalog";
+import {
+  formatCOP,
+  NEQUI,
+  ORDER_STATUS_LABELS,
+  type OrderStatus,
+} from "@/lib/catalog";
 import { getOrderByToken } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -38,13 +43,23 @@ export default async function OrderPage({
           .
         </p>
 
-        {order.paymentMethod === "online" ? (
-          <div className="mt-5 flex gap-3 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-900">
-            <CreditCard className="h-5 w-5 shrink-0" />
-            <p>
-              Pago aprobado en <strong>modo prueba</strong>. Es una pasarela simulada
-              (Stripe / MercadoPago sandbox): no se realizó ningún cobro real.
-            </p>
+        {order.paymentMethod === "nequi" ? (
+          <div className="mt-5 flex gap-3 rounded-xl bg-amber-50 p-4 text-sm text-amber-900">
+            <Smartphone className="h-5 w-5 shrink-0" />
+            <div className="space-y-1">
+              <p>
+                Estamos verificando tu transferencia a <strong>{NEQUI.holder}</strong> (
+                {NEQUI.phone}). Si aún no la hiciste, envía {formatCOP(order.total)} y
+                escríbenos con el comprobante.
+              </p>
+              {order.paymentReference && (
+                <p>
+                  Referencia registrada:{" "}
+                  <strong>{order.paymentReference}</strong>
+                </p>
+              )}
+              {order.paymentProofUrl && <p>Recibimos tu foto del comprobante.</p>}
+            </div>
           </div>
         ) : (
           <div className="mt-5 space-y-3 rounded-xl bg-brand-50 p-4 text-sm text-brand-900">

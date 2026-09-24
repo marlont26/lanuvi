@@ -38,6 +38,5 @@ next-env.d.ts
 # local env files
 .env
 
-# local sqlite database
-prisma/*.db
-prisma/*.db-journal
+# comprobantes subidos en local
+/public/uploads/

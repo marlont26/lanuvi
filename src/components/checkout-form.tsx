@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CreditCard, Loader2, MessageCircle } from "lucide-react";
-import { formatCOP, ONLINE_PAYMENTS_ENABLED } from "@/lib/catalog";
+import { Check, Loader2, MessageCircle, Smartphone, Upload } from "lucide-react";
+import { formatCOP, NEQUI } from "@/lib/catalog";
 import type { OrderView } from "@/lib/types";
 import { whatsappOrderUrl } from "@/lib/whatsapp";
 import { cartTotals, useCart } from "@/store/cart";
@@ -18,7 +18,8 @@ type FormState = {
   address: string;
   city: string;
   notes: string;
-  paymentMethod: "whatsapp" | "online";
+  paymentMethod: "nequi" | "whatsapp";
+  paymentReference: string;
 };
 
 const INITIAL: FormState = {
@@ -28,7 +29,8 @@ const INITIAL: FormState = {
   address: "",
   city: "Bogotá",
   notes: "",
-  paymentMethod: "whatsapp",
+  paymentMethod: "nequi",
+  paymentReference: "",
 };
 
 export function CheckoutForm() {
@@ -39,10 +41,37 @@ export function CheckoutForm() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [proofUrl, setProofUrl] = useState("");
+  const [proofName, setProofName] = useState("");
+  const [uploading, setUploading] = useState(false);
   const { subtotal, shipping, total } = cartTotals(items);
 
   const set = (key: keyof FormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }) as FormState);
+
+  const uploadProof = async (file: File) => {
+    setError("");
+    setUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append("file", file);
+      const response = await fetch("/api/payment-proof", {
+        method: "POST",
+        body: payload,
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error ?? "No pudimos subir el comprobante.");
+        return;
+      }
+      setProofUrl(data.url as string);
+      setProofName(file.name);
+    } catch {
+      setError("No pudimos subir el comprobante.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -54,6 +83,7 @@ export function CheckoutForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          paymentProofUrl: proofUrl,
           items: items.map((item) => ({
             variantId: item.variantId,
             quantity: item.quantity,
@@ -179,6 +209,96 @@ export function CheckoutForm() {
           <h2 className="serif text-lg">Confirmación y pago</h2>
           <label
             className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
+              form.paymentMethod === "nequi"
+                ? "border-brand-600 bg-brand-50"
+                : "border-stone-200"
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentMethod"
+              className="mt-1"
+              checked={form.paymentMethod === "nequi"}
+              onChange={() => set("paymentMethod")("nequi")}
+            />
+            <span>
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Smartphone className="h-4 w-4" /> Transferencia Nequi / celular
+              </span>
+              <span className="mt-1 block text-sm text-stone-600">
+                Transfieres el total y verificamos el pago a mano antes de preparar el
+                pedido.
+              </span>
+            </span>
+          </label>
+
+          {form.paymentMethod === "nequi" && (
+            <div className="space-y-4 rounded-xl bg-stone-50 p-4">
+              <dl className="space-y-1 text-sm">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-stone-600">Nequi / celular</dt>
+                  <dd className="font-medium">{NEQUI.phone}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-stone-600">Titular</dt>
+                  <dd className="font-medium">{NEQUI.holder}</dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-stone-600">Valor a transferir</dt>
+                  <dd className="font-medium">{formatCOP(total)}</dd>
+                </div>
+              </dl>
+              <ol className="list-decimal space-y-1 pl-5 text-sm text-stone-600">
+                <li>Abre Nequi y envía {formatCOP(total)} al número de arriba.</li>
+                <li>Copia la referencia o toma una foto del comprobante.</li>
+                <li>Déjala aquí abajo y confirma el pedido.</li>
+              </ol>
+
+              <div>
+                <label className="label" htmlFor="paymentReference">
+                  Número de comprobante o referencia (opcional)
+                </label>
+                <input
+                  id="paymentReference"
+                  className="field"
+                  placeholder="M1234567890"
+                  maxLength={60}
+                  value={form.paymentReference}
+                  onChange={(e) => set("paymentReference")(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <span className="label">Foto del comprobante (opcional)</span>
+                <label className="btn-secondary mt-1 w-fit cursor-pointer">
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4" />
+                  )}
+                  Adjuntar comprobante
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    className="hidden"
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) void uploadProof(file);
+                    }}
+                  />
+                </label>
+                {proofName && (
+                  <p className="mt-2 flex items-center gap-1 text-sm text-emerald-700">
+                    <Check className="h-4 w-4" /> {proofName}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <label
+            className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
               form.paymentMethod === "whatsapp"
                 ? "border-brand-600 bg-brand-50"
                 : "border-stone-200"
@@ -193,40 +313,13 @@ export function CheckoutForm() {
             />
             <span>
               <span className="flex items-center gap-2 text-sm font-medium">
-                <MessageCircle className="h-4 w-4" /> Confirmar por WhatsApp
+                <MessageCircle className="h-4 w-4" /> Coordinar por WhatsApp
               </span>
               <span className="mt-1 block text-sm text-stone-600">
-                Te abrimos el chat con el resumen del pedido y coordinas el pago contra
-                entrega.
+                Te abrimos el chat con el resumen y acordamos ahí cómo pagas.
               </span>
             </span>
           </label>
-          {ONLINE_PAYMENTS_ENABLED && (
-            <label
-              className={`flex cursor-pointer gap-3 rounded-xl border p-4 transition ${
-                form.paymentMethod === "online"
-                  ? "border-brand-600 bg-brand-50"
-                  : "border-stone-200"
-              }`}
-            >
-              <input
-                type="radio"
-                name="paymentMethod"
-                className="mt-1"
-                checked={form.paymentMethod === "online"}
-                onChange={() => set("paymentMethod")("online")}
-              />
-              <span>
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <CreditCard className="h-4 w-4" /> Pago en línea (modo prueba)
-                </span>
-                <span className="mt-1 block text-sm text-stone-600">
-                  Simula una pasarela tipo Stripe / MercadoPago en sandbox. No se realiza
-                  ningún cobro real.
-                </span>
-              </span>
-            </label>
-          )}
         </section>
       </div>
 
@@ -271,12 +364,18 @@ export function CheckoutForm() {
           <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
         )}
 
-        <button type="submit" disabled={submitting} className="btn-primary w-full">
+        <button
+          type="submit"
+          disabled={submitting || uploading}
+          className="btn-primary w-full"
+        >
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-          {form.paymentMethod === "whatsapp" ? "Confirmar por WhatsApp" : "Pagar (prueba)"}
+          {form.paymentMethod === "nequi"
+            ? "Ya transferí, confirmar pedido"
+            : "Confirmar por WhatsApp"}
         </button>
         <p className="text-center text-xs text-stone-500">
-          Al confirmar aceptas que te contactemos para coordinar la entrega.
+          Verificamos el pago a mano y te avisamos cuando el pedido entre en preparación.
         </p>
       </aside>
     </form>

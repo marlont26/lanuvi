@@ -46,6 +46,8 @@ export type OrderView = {
   city: string;
   notes: string;
   paymentMethod: string;
+  paymentReference: string;
+  paymentProofUrl: string;
   status: string;
   subtotal: number;
   shipping: number;

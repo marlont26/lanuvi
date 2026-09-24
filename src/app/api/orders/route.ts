@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import {
-  ONLINE_PAYMENTS_ENABLED,
-  PAYMENT_METHODS,
-  shippingFor,
-} from "@/lib/catalog";
+import { PAYMENT_METHODS, shippingFor } from "@/lib/catalog";
+import { isStoredProofUrl } from "@/lib/payment-proof";
 import { prisma } from "@/lib/prisma";
 import { getOrders, toOrderView } from "@/lib/queries";
 
@@ -17,6 +14,8 @@ type IncomingOrder = {
   city?: string;
   notes?: string;
   paymentMethod?: string;
+  paymentReference?: string;
+  paymentProofUrl?: string;
   items?: IncomingItem[];
 };
 
@@ -49,7 +48,9 @@ export async function POST(request: Request) {
   const phone = body.phone?.trim() ?? "";
   const address = body.address?.trim() ?? "";
   const city = body.city?.trim() ?? "";
-  const paymentMethod = body.paymentMethod ?? "whatsapp";
+  const paymentMethod = body.paymentMethod ?? "nequi";
+  const paymentReference = body.paymentReference?.trim().slice(0, 60) ?? "";
+  const paymentProofUrl = body.paymentProofUrl?.trim() ?? "";
   const rawItems = Array.isArray(body.items) ? body.items : [];
 
   const requested = new Map<string, number>();
@@ -83,9 +84,9 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (paymentMethod === "online" && !ONLINE_PAYMENTS_ENABLED) {
+  if (paymentProofUrl && !isStoredProofUrl(paymentProofUrl)) {
     return NextResponse.json(
-      { error: "El pago en línea no está disponible." },
+      { error: "El comprobante debe subirse desde el formulario." },
       { status: 400 },
     );
   }
@@ -162,6 +163,8 @@ export async function POST(request: Request) {
           city,
           notes: body.notes?.trim() ?? "",
           paymentMethod,
+          paymentReference,
+          paymentProofUrl,
           subtotal,
           shipping,
           total: subtotal + shipping,

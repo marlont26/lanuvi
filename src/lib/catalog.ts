@@ -28,34 +28,46 @@ export function categoryName(slug: string): string {
 }
 
 export const ORDER_STATUSES = [
-  "PENDING",
+  "PENDING_PAYMENT",
+  "PAID",
   "PREPARING",
   "SHIPPED",
   "DELIVERED",
+  "CANCELLED",
 ] as const;
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING: "Pendiente",
+  PENDING_PAYMENT: "Pago por verificar",
+  PAID: "Pagado",
   PREPARING: "En preparación",
   SHIPPED: "Enviado",
   DELIVERED: "Entregado",
+  CANCELLED: "Cancelado",
 };
 
 export const ORDER_STATUS_STYLES: Record<OrderStatus, string> = {
-  PENDING: "bg-amber-100 text-amber-800",
+  PENDING_PAYMENT: "bg-amber-100 text-amber-800",
+  PAID: "bg-lime-100 text-lime-800",
   PREPARING: "bg-sky-100 text-sky-800",
   SHIPPED: "bg-violet-100 text-violet-800",
   DELIVERED: "bg-emerald-100 text-emerald-800",
+  CANCELLED: "bg-rose-100 text-rose-700",
 };
 
 export const PAYMENT_METHODS = {
-  whatsapp: "Confirmación por WhatsApp",
-  online: "Pago en línea (modo prueba)",
+  nequi: "Transferencia Nequi",
+  whatsapp: "Coordinar por WhatsApp",
 } as const;
 
 export type PaymentMethod = keyof typeof PAYMENT_METHODS;
+
+/** Bank-transfer details shown at checkout; every payment is verified by hand. */
+export const NEQUI = {
+  phone: process.env.NEXT_PUBLIC_NEQUI_PHONE || "300 123 4567",
+  holder: process.env.NEXT_PUBLIC_NEQUI_HOLDER || "Lanuvi SAS",
+};
 
 /** Free delivery above this amount (COP). */
 export const FREE_SHIPPING_THRESHOLD = 90_000;
@@ -81,6 +93,3 @@ export const PRICE_RANGES = [
   { id: "desde-20k", label: "Desde $20.000", min: 20000, max: Number.MAX_SAFE_INTEGER },
 ] as const;
 
-/** Online (sandbox) payment option is shown unless explicitly disabled. */
-export const ONLINE_PAYMENTS_ENABLED =
-  process.env.NEXT_PUBLIC_ONLINE_PAYMENTS_ENABLED !== "false";
