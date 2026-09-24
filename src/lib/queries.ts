@@ -53,6 +53,8 @@ export function toOrderView(order: OrderWithItems): OrderView {
     city: order.city,
     notes: order.notes,
     paymentMethod: order.paymentMethod,
+    paymentReference: order.paymentReference,
+    paymentProofUrl: order.paymentProofUrl,
     status: order.status,
     subtotal: order.subtotal,
     shipping: order.shipping,
@@ -128,10 +130,12 @@ export type SalesOverview = {
 };
 
 export async function getSalesOverview(): Promise<SalesOverview> {
-  const [orders, products] = await Promise.all([
+  const [allOrders, products] = await Promise.all([
     prisma.order.findMany({ include: { items: true } }),
     prisma.product.findMany({ include: { variants: true } }),
   ]);
+  // Cancelled orders never turn into money, so they stay out of every sales figure.
+  const orders = allOrders.filter((order) => order.status !== "CANCELLED");
 
   const productById = new Map(products.map((p) => [p.id, p]));
   const revenue = orders.reduce((sum, o) => sum + o.total, 0);
@@ -178,7 +182,7 @@ export async function getSalesOverview(): Promise<SalesOverview> {
     revenue,
     orderCount: orders.length,
     averageTicket: orders.length ? Math.round(revenue / orders.length) : 0,
-    pendingCount: orders.filter((o) => o.status === "PENDING").length,
+    pendingCount: allOrders.filter((o) => o.status === "PENDING_PAYMENT").length,
     unitsSold,
     lowStock,
     topProducts: [...perProduct.values()].sort((a, b) => b.units - a.units).slice(0, 5),

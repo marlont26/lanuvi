@@ -1,14 +1,16 @@
 // Lanuvi store schema.
-// SQLite keeps local setup zero-config; swap `provider` to "postgresql" and
-// point DATABASE_URL at a Postgres instance to run the same schema in prod.
+// Runs on PostgreSQL (Supabase in production, any local Postgres for development).
+// `gallery` and `nutrition` stay JSON strings so the data shape is unchanged.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Supabase pools connections on 6543; migrations/db push need the direct 5432 URL.
+  directUrl = env("DIRECT_URL")
 }
 
 model Product {
@@ -59,7 +61,11 @@ model Order {
   city          String
   notes         String   @default("")
   paymentMethod String
-  status        String   @default("PENDING")
+  status        String   @default("PENDING_PAYMENT")
+  /// Nequi transfer reference typed by the buyer (manual payment).
+  paymentReference String @default("")
+  /// Public URL of the uploaded transfer receipt, when the buyer attached one.
+  paymentProofUrl  String @default("")
   subtotal      Int
   shipping      Int
   total         Int

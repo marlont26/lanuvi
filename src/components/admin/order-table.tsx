@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Fragment, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Check, X } from "lucide-react";
 import {
   formatCOP,
   ORDER_STATUS_LABELS,
@@ -123,8 +123,15 @@ export function OrderTable({ orders }: { orders: OrderView[] }) {
                     {dateFormatter.format(new Date(order.createdAt))}
                   </td>
                   <td className="px-4 py-3 text-stone-600">
-                    {PAYMENT_METHODS[order.paymentMethod as PaymentMethod] ??
-                      order.paymentMethod}
+                    <p>
+                      {PAYMENT_METHODS[order.paymentMethod as PaymentMethod] ??
+                        order.paymentMethod}
+                    </p>
+                    {order.paymentReference && (
+                      <p className="text-xs text-stone-500">
+                        Ref. {order.paymentReference}
+                      </p>
+                    )}
                   </td>
                   <td className="px-4 py-3 font-medium">{formatCOP(order.total)}</td>
                   <td className="px-4 py-3">
@@ -146,6 +153,26 @@ export function OrderTable({ orders }: { orders: OrderView[] }) {
                         </option>
                       ))}
                     </select>
+                    {order.status === "PENDING_PAYMENT" && (
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          disabled={pending === order.id}
+                          onClick={() => changeStatus(order, "PAID")}
+                          className="inline-flex items-center gap-1 rounded-full bg-lime-100 px-2.5 py-1 text-xs font-medium text-lime-800 hover:bg-lime-200 disabled:opacity-50"
+                        >
+                          <Check className="h-3.5 w-3.5" /> Pagado
+                        </button>
+                        <button
+                          type="button"
+                          disabled={pending === order.id}
+                          onClick={() => changeStatus(order, "CANCELLED")}
+                          className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-200 disabled:opacity-50"
+                        >
+                          <X className="h-3.5 w-3.5" /> Cancelar
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
                 {expanded === order.id && (
@@ -183,6 +210,28 @@ export function OrderTable({ orders }: { orders: OrderView[] }) {
                             Subtotal {formatCOP(order.subtotal)} · Domicilio{" "}
                             {order.shipping === 0 ? "gratis" : formatCOP(order.shipping)}
                           </p>
+                          <p className="mt-3 text-xs uppercase tracking-wide text-stone-500">
+                            Pago manual
+                          </p>
+                          <p>
+                            {PAYMENT_METHODS[order.paymentMethod as PaymentMethod] ??
+                              order.paymentMethod}
+                            {order.paymentReference
+                              ? ` · referencia ${order.paymentReference}`
+                              : " · sin referencia"}
+                          </p>
+                          {order.paymentProofUrl ? (
+                            <a
+                              href={order.paymentProofUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand-700 underline"
+                            >
+                              Ver comprobante
+                            </a>
+                          ) : (
+                            <p className="text-stone-500">Sin comprobante adjunto</p>
+                          )}
                         </div>
                       </div>
                     </td>

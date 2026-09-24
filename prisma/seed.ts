@@ -11,6 +11,7 @@ type SeedOrder = {
   address: string;
   city: string;
   paymentMethod: string;
+  paymentReference?: string;
   status: string;
   daysAgo: number;
   items: { slug: string; variantIndex: number; quantity: number }[];
@@ -39,7 +40,8 @@ const SEED_ORDERS: SeedOrder[] = [
     email: "andres.gomez@example.com",
     address: "Calle 45 #22-10",
     city: "Chía",
-    paymentMethod: "online",
+    paymentMethod: "nequi",
+    paymentReference: "M8842013377",
     status: "DELIVERED",
     daysAgo: 6,
     items: [
@@ -69,7 +71,8 @@ const SEED_ORDERS: SeedOrder[] = [
     email: "valentina.ossa@example.com",
     address: "Cra 7 #127-45, torre 2",
     city: "Bogotá",
-    paymentMethod: "online",
+    paymentMethod: "nequi",
+    paymentReference: "M2290114452",
     status: "PREPARING",
     daysAgo: 1,
     items: [
@@ -84,8 +87,9 @@ const SEED_ORDERS: SeedOrder[] = [
     email: "julian.mesa@example.com",
     address: "Calle 12 #5-60",
     city: "Cajicá",
-    paymentMethod: "whatsapp",
-    status: "PENDING",
+    paymentMethod: "nequi",
+    paymentReference: "M7710093318",
+    status: "PENDING_PAYMENT",
     daysAgo: 0,
     items: [
       { slug: "yogur-de-mora-de-castilla", variantIndex: 0, quantity: 3 },
@@ -151,6 +155,7 @@ async function main() {
         address: order.address,
         city: order.city,
         paymentMethod: order.paymentMethod,
+        paymentReference: order.paymentReference ?? "",
         status: order.status,
         subtotal,
         shipping,
